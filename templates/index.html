@@ -1,365 +1,502 @@
-  <!DOCTYPE html>
-  <html lang="en">
-  <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PR Guardian</title>
-  <style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  :root{
-    --bg:#0f2020; --bg-card:#162e2e; --border:#1e4040; --border-light:#2a6060;
-    --text:#d4f0f0; --text-dim:#4a9090; --text-mid:#7ababa; --text-soft:#4a7070;
-    --accent:#4acaca; --accent-soft:#8ae0e0; --input-bg:#0a1818;
-  }
-  body.light{
-    --bg:#dff4f4; --bg-card:#ffffff; --border:#b0dcdc; --border-light:#70bcbc;
-    --text:#0f2828; --text-dim:#4a8888; --text-mid:#2a6060; --text-soft:#6a9898;
-    --accent:#1a7070; --accent-soft:#0f4040; --input-bg:#e4f4f4;
-  }
-  body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background .2s,color .2s}
-  .header{background:var(--bg);border-bottom:1px solid var(--border);padding:16px 32px;display:flex;align-items:center;gap:12px}
-  .logo{width:44px;height:44px;background:transparent;color:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;box-shadow:none;border:none}
-  .htitle{font-size:18px;font-weight:600;color:var(--accent);margin-left:4px}
-  .header-sub{font-size:13px;color:var(--accent-soft);margin-left:4px}
-  .badge{background:var(--border);color:var(--accent);font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;border:1px solid var(--border-light);margin-left:auto;margin-right:12px}
-  .theme-toggle{background:var(--border);border:1px solid var(--border-light);color:var(--accent);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
-  .main{max-width:860px;margin:32px auto;padding:0 20px}
-  .input-card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:24px}
-  .input-label{font-size:12px;font-weight:500;color:var(--text-mid);letter-spacing:.08em;margin-bottom:14px}
-  .input-row{display:flex;gap:10px}
-  input{background:var(--input-bg);border:1px solid var(--border-light);color:var(--text);font-family:inherit;font-size:14px;padding:10px 14px;border-radius:8px;flex:1;outline:none;transition:border-color .15s}
-  input:focus{border-color:var(--accent)}
-  input::placeholder{color:var(--text-dim)}
-  .pr-input{max-width:160px}
-  .btn{background:var(--accent);color:#ffffff;border:none;font-family:inherit;font-size:14px;font-weight:700;padding:10px 22px;border-radius:8px;cursor:pointer;white-space:nowrap;transition:background .15s}
-  .btn:hover{background:var(--text-soft)}
-  .btn:disabled{background:var(--border);color:var(--text-dim);cursor:not-allowed}
-  .agents{display:grid;grid-template-columns:1fr;gap:14px;margin-bottom:16px}
-  .agent-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:18px}
-  .agent-card.writer,.agent-card.reviewer,.agent-card.redteam,.agent-card.orchestrator{border-left:3px solid var(--text-mid)}
-  .agent-tag{font-size:11px;font-weight:500;letter-spacing:.08em;margin-bottom:10px;display:flex;align-items:center;gap:6px;color:var(--accent-soft)}
-  .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
-  .agent-output{font-size:14px;color:var(--text-dim);line-height:1.85;white-space:normal;min-height:80px}
-  .agent-output.active{color:var(--text)}
-  .verdict{text-align:center;padding:18px;border-radius:12px;font-size:15px;font-weight:500;margin-top:4px;display:none}
-  .verdict.approved{background:#1a3a2a;border:1px solid #40534C;color:#9db89f}
-  .verdict.changes{background:#2a1a1a;border:1px solid #7f3d3d;color:#e8a0a0}
-  .human-loop{display:none;background:var(--bg-card);border:1px solid var(--border-light);border-radius:12px;padding:24px;margin-top:16px;text-align:center}
-  .human-loop-title{color:var(--accent-soft);font-size:13px;font-weight:500;letter-spacing:.08em;margin-bottom:8px}
-  .human-loop-sub{color:var(--text-soft);font-size:12px;margin-bottom:20px}
-  .decision-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
-  .btn-approve{background:#166534;color:#4ade80;border:none;font-family:inherit;font-size:14px;font-weight:500;padding:10px 22px;border-radius:8px;cursor:pointer}
-  .btn-reject{background:#7f1d1d;color:#f87171;border:none;font-family:inherit;font-size:14px;font-weight:500;padding:10px 22px;border-radius:8px;cursor:pointer}
-  .btn-changes{background:var(--text-dim);color:var(--accent);border:none;font-family:inherit;font-size:14px;font-weight:500;padding:10px 22px;border-radius:8px;cursor:pointer}
-  .btn-approve:hover{background:#14532d}
-  .btn-reject:hover{background:#6b1919}
-  .btn-changes:hover{background:var(--text-soft)}
-  .spinner{display:inline-block;width:11px;height:11px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin-right:6px;vertical-align:middle}
-  .banner{max-width:860px;margin:32px auto 0;padding:0 20px}
-  .banner h1{font-size:32px;font-weight:600;color:var(--accent);line-height:1.4;margin-bottom:10px;font-family:Georgia,'Times New Roman',serif}
-  .banner p{font-size:15px;color:var(--text-soft);line-height:1.7;max-width:680px}
-  .why-section{max-width:860px;margin:28px auto 0;padding:0 20px}
-  .why-section h2{font-size:18px;font-weight:600;color:var(--accent-soft);margin-bottom:8px;letter-spacing:.04em;font-family:Georgia,'Times New Roman',serif}
-  .why-section p{font-size:15px;color:var(--text-mid);line-height:1.7;max-width:700px}
-  .agents-intro{max-width:860px;margin:28px auto 0;padding:0 20px;display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-  .agent-intro-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px}
-  .agent-icon{font-size:24px;margin-bottom:12px}
-  .agent-intro-card h3{font-size:17px;font-weight:600;color:var(--accent);margin-bottom:10px;font-family:Georgia,'Times New Roman',serif}
-  .agent-intro-card p{font-size:13px;color:var(--text-mid);line-height:1.6;margin-bottom:14px}
-  .agent-intro-card .tagline{font-size:12px;color:var(--text-soft);font-style:italic}
-  .try-section{max-width:860px;margin:32px auto 60px;padding:0 20px;text-align:center}
-  .btn-try{background:var(--accent);color:var(--bg);border:none;font-family:inherit;font-size:15px;font-weight:600;padding:14px 32px;border-radius:10px;cursor:pointer;transition:background .15s}
-  .btn-try:hover{opacity:.85}
-  .chat-fab{position:fixed;bottom:24px;right:24px;width:52px;height:52px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.3);z-index:100;transition:transform .15s}
-  .chat-fab:hover{transform:scale(1.08)}
-  .chat-popup{display:none;position:fixed;bottom:88px;right:24px;width:340px;max-height:480px;background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:18px;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,.4)}
-  .chat-popup.open{display:flex;flex-direction:column}
-  .chat-popup-header{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:600;color:var(--accent);margin-bottom:12px}
-  .chat-close{cursor:pointer;color:var(--text-soft);font-size:14px}
-  .chat-messages{display:flex;flex-direction:column;gap:10px;margin-bottom:12px;max-height:280px;overflow-y:auto;flex:1}
-  .chat-msg{font-size:13px;line-height:1.7;padding:10px 14px;border-radius:8px;max-width:88%}
-  .chat-msg.user{background:var(--border);color:var(--accent-soft);align-self:flex-end}
-  .chat-msg.assistant{background:var(--input-bg);color:var(--text-mid);align-self:flex-start}
-  .chat-input-row{display:flex;gap:8px}
-  .chat-input-row input{background:var(--input-bg);border:1px solid var(--border);color:var(--text);font-family:inherit;font-size:12px;padding:8px 10px;border-radius:8px;flex:1;outline:none}
-  .chat-input-row input:disabled{opacity:.4;cursor:not-allowed}
-  .btn-chat{background:var(--accent);color:white;border:none;font-family:inherit;font-size:12px;font-weight:700;padding:8px 14px;border-radius:8px;cursor:pointer}
-  .btn-chat:disabled{background:var(--border);color:var(--text-dim);cursor:not-allowed}
-  .home-btn{background:transparent;border:1px solid var(--border-light);color:var(--text-mid);font-family:inherit;font-size:12px;padding:6px 14px;border-radius:8px;cursor:pointer;margin-left:8px}
-  .home-btn:hover{background:var(--border);color:var(--accent)}
-  @media(max-width:768px){.agents-intro{grid-template-columns:1fr 1fr}}
-  @keyframes spin{to{transform:rotate(360deg)}}
-  </style>
-  </head>
-  <body>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PR Guardian</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f2020; --bg-card:#162e2e; --border:#1e4040; --border-light:#2a6060;
+  --text:#d4f0f0; --text-dim:#4a9090; --text-mid:#7ababa; --text-soft:#4a7070;
+  --accent:#4acaca; --accent-soft:#8ae0e0; --input-bg:#0a1818;
+}
+body.light{
+  --bg:#dff4f4; --bg-card:#ffffff; --border:#b0dcdc; --border-light:#70bcbc;
+  --text:#0f2828; --text-dim:#4a8888; --text-mid:#2a6060; --text-soft:#6a9898;
+  --accent:#1a7070; --accent-soft:#0f4040; --input-bg:#e4f4f4;
+}
+body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background .2s,color .2s}
+.header{background:var(--bg);border-bottom:1px solid var(--border);padding:16px 32px;display:flex;align-items:center;gap:12px}
+.logo{width:44px;height:44px;background:transparent;color:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;box-shadow:none;border:none}
+.htitle{font-size:18px;font-weight:600;color:var(--accent);margin-left:4px}
+.header-sub{font-size:13px;color:var(--accent-soft);margin-left:4px}
+.badge{background:var(--border);color:var(--accent);font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;border:1px solid var(--border-light);margin-left:auto;margin-right:12px}
+.theme-toggle{background:var(--border);border:1px solid var(--border-light);color:var(--accent);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
+.home-btn{background:transparent;border:1px solid var(--border-light);color:var(--text-mid);font-family:inherit;font-size:12px;padding:6px 14px;border-radius:8px;cursor:pointer;margin-left:8px}
+.home-btn:hover{background:var(--border);color:var(--accent)}
+.main{max-width:860px;margin:32px auto;padding:0 20px}
+.stats-bar{display:flex;gap:20px;align-items:center;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:12px 20px;margin-bottom:20px;font-size:12px;color:var(--text-mid)}
+.stats-bar span{color:var(--accent)}
+.input-card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:24px}
+.input-label{font-size:12px;font-weight:500;color:var(--text-mid);letter-spacing:.08em;margin-bottom:14px}
+.input-row{display:flex;gap:10px}
+input{background:var(--input-bg);border:1px solid var(--border-light);color:var(--text);font-family:inherit;font-size:14px;padding:10px 14px;border-radius:8px;flex:1;outline:none;transition:border-color .15s}
+input:focus{border-color:var(--accent)}
+input::placeholder{color:var(--text-dim)}
+.pr-input{max-width:160px}
+.btn{background:var(--accent);color:#ffffff;border:none;font-family:inherit;font-size:14px;font-weight:700;padding:10px 22px;border-radius:8px;cursor:pointer;white-space:nowrap;transition:background .15s}
+.btn:hover{opacity:.9}
+.btn:disabled{background:var(--border);color:var(--text-dim);cursor:not-allowed}
+.agents{display:grid;grid-template-columns:1fr;gap:14px;margin-bottom:16px}
+.agent-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:18px}
+.agent-card.writer,.agent-card.reviewer,.agent-card.redteam,.agent-card.orchestrator{border-left:3px solid var(--text-mid)}
+.agent-tag-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.agent-tag{font-size:11px;font-weight:500;letter-spacing:.08em;display:flex;align-items:center;gap:6px;color:var(--accent-soft)}
+.dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.score-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px;display:none}
+.score-badge.green{background:#144d2e;color:#4ade80;display:inline-block}
+.score-badge.yellow{background:#4d3f14;color:#facc15;display:inline-block}
+.score-badge.red{background:#4d1414;color:#f87171;display:inline-block}
+.agent-output{font-size:14px;color:var(--text-dim);line-height:1.85;white-space:normal;min-height:80px}
+.agent-output.active{color:var(--text)}
+.code-block{background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:10px;font-family:'Courier New',monospace;font-size:11px;color:var(--text-mid);line-height:1.6;white-space:pre-wrap;max-height:220px;overflow-y:auto}
+.hl-risk{background:rgba(248,113,113,.2);color:#f87171;padding:1px 3px;border-radius:3px;font-weight:600}
+.verdict{text-align:center;padding:18px;border-radius:12px;font-size:15px;font-weight:500;margin-top:4px;display:none}
+.verdict.approved{background:#1a3a2a;border:1px solid #40534C;color:#9db89f}
+.verdict.changes{background:#2a1a1a;border:1px solid #7f3d3d;color:#e8a0a0}
+.download-row{text-align:center;margin-top:14px;display:none}
+.btn-download{background:transparent;border:1px solid var(--border-light);color:var(--accent);font-family:inherit;font-size:13px;font-weight:600;padding:9px 20px;border-radius:8px;cursor:pointer}
+.btn-download:hover{background:var(--border)}
+.human-loop{display:none;background:var(--bg-card);border:1px solid var(--border-light);border-radius:12px;padding:24px;margin-top:16px;text-align:center}
+.human-loop-title{color:var(--accent-soft);font-size:13px;font-weight:500;letter-spacing:.08em;margin-bottom:8px}
+.human-loop-sub{color:var(--text-soft);font-size:12px;margin-bottom:20px}
+.decision-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn-approve{background:#166534;color:#4ade80;border:none;font-family:inherit;font-size:14px;font-weight:500;padding:10px 22px;border-radius:8px;cursor:pointer}
+.btn-reject{background:#7f1d1d;color:#f87171;border:none;font-family:inherit;font-size:14px;font-weight:500;padding:10px 22px;border-radius:8px;cursor:pointer}
+.btn-changes{background:var(--text-dim);color:#ffffff;border:none;font-family:inherit;font-size:14px;font-weight:500;padding:10px 22px;border-radius:8px;cursor:pointer}
+.btn-approve:hover{background:#14532d}
+.btn-reject:hover{background:#6b1919}
+.btn-changes:hover{opacity:.85} 
+.spinner{display:inline-block;width:11px;height:11px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin-right:6px;vertical-align:middle}
+.banner{max-width:860px;margin:32px auto 0;padding:0 20px}
+.banner h1{font-size:32px;font-weight:600;color:var(--accent);line-height:1.4;margin-bottom:10px;font-family:Georgia,'Times New Roman',serif}
+.banner p{font-size:15px;color:var(--text-soft);line-height:1.7;max-width:680px}
+.why-section{max-width:860px;margin:28px auto 0;padding:0 20px}
+.why-section h2{font-size:18px;font-weight:600;color:var(--accent-soft);margin-bottom:8px;letter-spacing:.04em;font-family:Georgia,'Times New Roman',serif}
+.why-section p{font-size:15px;color:var(--text-mid);line-height:1.7;max-width:700px}
+.agents-intro{max-width:860px;margin:28px auto 0;padding:0 20px;display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.agent-intro-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px}
+.agent-icon{font-size:24px;margin-bottom:12px}
+.agent-intro-card h3{font-size:17px;font-weight:600;color:var(--accent);margin-bottom:10px;font-family:Georgia,'Times New Roman',serif}
+.agent-intro-card p{font-size:13px;color:var(--text-mid);line-height:1.6;margin-bottom:14px}
+.agent-intro-card .tagline{font-size:12px;color:var(--text-soft);font-style:italic}
+.try-section{max-width:860px;margin:32px auto 60px;padding:0 20px;text-align:center}
+.btn-try{background:var(--accent);color:#ffffff;border:none;font-family:inherit;font-size:15px;font-weight:600;padding:14px 32px;border-radius:10px;cursor:pointer;transition:background .15s}
+.btn-try:hover{opacity:.85}
+.chat-fab{position:fixed;bottom:24px;right:24px;width:52px;height:52px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.3);z-index:100;transition:transform .15s}
+.chat-fab:hover{transform:scale(1.08)}
+.chat-popup{display:none;position:fixed;bottom:88px;right:24px;width:340px;max-height:480px;background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:18px;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.chat-popup.open{display:flex;flex-direction:column}
+.chat-popup-header{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:600;color:var(--accent);margin-bottom:12px}
+.chat-close{cursor:pointer;color:var(--text-soft);font-size:14px}
+.chat-messages{display:flex;flex-direction:column;gap:10px;margin-bottom:12px;max-height:280px;overflow-y:auto;flex:1}
+.chat-msg{font-size:13px;line-height:1.7;padding:10px 14px;border-radius:8px;max-width:88%}
+.chat-msg.user{background:var(--border);color:var(--accent-soft);align-self:flex-end}
+.chat-msg.assistant{background:var(--input-bg);color:var(--text-mid);align-self:flex-start}
+.chat-input-row{display:flex;gap:8px}
+.chat-input-row input{background:var(--input-bg);border:1px solid var(--border);color:var(--text);font-family:inherit;font-size:12px;padding:8px 10px;border-radius:8px;flex:1;outline:none}
+.chat-input-row input:disabled{opacity:.4;cursor:not-allowed}
+.btn-chat{background:var(--accent);color:#0f2020;border:none;font-family:inherit;font-size:12px;font-weight:700;padding:8px 14px;border-radius:8px;cursor:pointer}
+.btn-chat:disabled{background:var(--border);color:var(--text-dim);cursor:not-allowed}
+.agent-output.loading-pulse{animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
+@media(max-width:768px){.agents-intro{grid-template-columns:1fr 1fr}}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
 
-  <div id="landing-page">
-    <div class="header">
-      <div class="logo">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<div id="landing-page">
+  <div class="header">
+    <div class="logo">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M12 2L4 5V11C4 16.5 7.5 21 12 22C16.5 21 20 16.5 20 11V5L12 2Z" fill="currentColor" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
-        </svg>
-      </div>
+      </svg>
+    </div>
     <span class="htitle">PR Guardian</span>
     <span class="header-sub">Multi-Agent Adversarial Code Review</span>
     <span class="badge">4 AGENTS</span>
     <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
   </div>
 
-    <div class="banner">
-      <h1>Four AI agents review your code like a senior engineering team</h1>
-      <p>PR Guardian fetches a real GitHub pull request and runs it through an adversarial pipeline. It catches what a single reviewer would miss.</p>
-    </div>
+  <div class="banner">
+    <h1>Four AI agents review your code like a senior engineering team</h1>
+    <p>PR Guardian fetches a real GitHub pull request and runs it through an adversarial pipeline. It catches what a single reviewer would miss.</p>
+  </div>
 
-    <div class="why-section">
-      <h2>Why use this?</h2>
-      <p>Open source maintainers are drowning in pull requests. Popular repositories receive hundreds monthly, but maintainer bandwidth hasn't scaled. PR Guardian acts as an always-on senior engineering team, reviewing every PR before a human touches it. It escalates only when the agents themselves can't agree.</p>
-    </div>
+  <div class="why-section">
+    <h2>Why use this?</h2>
+    <p>Open source maintainers are drowning in pull requests. Popular repositories receive hundreds monthly, but maintainer bandwidth hasn't scaled. PR Guardian acts as an always-on senior engineering team, reviewing every PR before a human touches it. It escalates only when the agents themselves can't agree.</p>
+  </div>
 
-    <div class="agents-intro">
-      <div class="agent-intro-card">
-        <div class="agent-icon">✍️</div>
-        <h3>Writer Agent</h3>
-        <p>Reviews the raw code diff. Scores quality, identifies issues, and rewrites code with fixes applied.</p>
-        <span class="tagline">The first-pass senior engineer.</span>
-      </div>
-      <div class="agent-intro-card">
-        <div class="agent-icon">⚖️</div>
-        <h3>Reviewer Agent</h3>
-        <p>Challenges the Writer's review. Finds blind spots and issues an AGREE or DISAGREE verdict.</p>
-        <span class="tagline">Adversarial by design.</span>
-      </div>
-      <div class="agent-intro-card">
-        <div class="agent-icon">🛡️</div>
-        <h3>Red Team Agent</h3>
-        <p>Probes for prompt injection, malicious logic, and supply chain risks.</p>
-        <span class="tagline">Trust nothing. Verify everything.</span>
-      </div>
-      <div class="agent-intro-card">
-        <div class="agent-icon">🧭</div>
-        <h3>Orchestrator</h3>
-        <p>Runs the pipeline, detects disagreement, and escalates to a human when needed.</p>
-        <span class="tagline">Routes the right cases to you.</span>
-      </div>
+  <div class="agents-intro">
+    <div class="agent-intro-card">
+      <div class="agent-icon">✍️</div>
+      <h3>Writer Agent</h3>
+      <p>Reviews the raw code diff. Scores quality, identifies issues, and rewrites code with fixes applied.</p>
+      <span class="tagline">The first-pass senior engineer.</span>
     </div>
-
-    <div class="try-section">
-      <button class="btn-try" onclick="goToApp()">Try it yourself →</button>
+    <div class="agent-intro-card">
+      <div class="agent-icon">⚖️</div>
+      <h3>Reviewer Agent</h3>
+      <p>Challenges the Writer's review. Finds blind spots and issues an AGREE or DISAGREE verdict.</p>
+      <span class="tagline">Adversarial by design.</span>
+    </div>
+    <div class="agent-intro-card">
+      <div class="agent-icon">🛡️</div>
+      <h3>Red Team Agent</h3>
+      <p>Probes for prompt injection, malicious logic, and supply chain risks.</p>
+      <span class="tagline">Trust nothing. Verify everything.</span>
+    </div>
+    <div class="agent-intro-card">
+      <div class="agent-icon">🧭</div>
+      <h3>Orchestrator</h3>
+      <p>Runs the pipeline, detects disagreement, and escalates to a human when needed.</p>
+      <span class="tagline">Routes the right cases to you.</span>
     </div>
   </div>
 
-  <div id="app-page" style="display:none">
-    <div class="header">
-      <div class="logo">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12 2L4 5V11C4 16.5 7.5 21 12 22C16.5 21 20 16.5 20 11V5L12 2Z" fill="currentColor" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
-  </svg>
+  <div class="try-section">
+    <button class="btn-try" onclick="goToApp()">Try it yourself →</button>
+  </div>
 </div>
-      <span class="htitle">PR Guardian</span>
-      <span class="header-sub">Multi-Agent Adversarial Code Review</span>
-      <span class="badge">4 AGENTS</span>
-      <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
-      <button class="home-btn" onclick="goHome()">← Home</button>
+
+<div id="app-page" style="display:none">
+  <div class="header">
+    <div class="logo">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2L4 5V11C4 16.5 7.5 21 12 22C16.5 21 20 16.5 20 11V5L12 2Z" fill="currentColor" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <span class="htitle">PR Guardian</span>
+    <span class="header-sub">Multi-Agent Adversarial Code Review</span>
+    <span class="badge">4 AGENTS</span>
+    <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+    <button class="home-btn" onclick="goHome()">← Home</button>
+  </div>
+
+  <div class="main">
+    <div class="stats-bar" id="stats-bar">
+      <span id="stat-reviewed">0</span>&nbsp;PRs reviewed &nbsp;·&nbsp; <span id="stat-disagree">0</span>&nbsp;disagreements detected
     </div>
 
-    <div class="main">
-      <div class="input-card">
-        <div class="input-label">PULL REQUEST DETAILS</div>
-        <div class="input-row">
-          <input id="repo" type="text" placeholder="owner/repo — e.g. pallets/flask" />
-          <input id="pr" type="text" placeholder="PR number" class="pr-input"/>
-          <button class="btn" id="btn" onclick="runReview()">Review PR</button>
-        </div>
+    <div class="input-card">
+      <div class="input-label">PULL REQUEST DETAILS</div>
+      <div class="input-row">
+        <input id="repo" type="text" placeholder="owner/repo — e.g. pallets/flask" />
+        <input id="pr" type="text" placeholder="PR number" class="pr-input"/>
+        <button class="btn" id="btn" onclick="runReview()">Review PR</button>
       </div>
+    </div>
 
-      <div class="agents">
-        <div class="agent-card writer">
+    <div class="agents">
+      <div class="agent-card writer">
+        <div class="agent-tag-row">
           <div class="agent-tag"><span class="dot"></span>WRITER AGENT</div>
-          <div class="agent-output" id="writer-out">Waiting for input...</div>
+          <span class="score-badge" id="score-badge"></span>
         </div>
-        <div class="agent-card reviewer">
+        <div class="agent-output" id="writer-out">Waiting for input...</div>
+      </div>
+      <div class="agent-card reviewer">
+        <div class="agent-tag-row">
           <div class="agent-tag"><span class="dot"></span>REVIEWER AGENT</div>
-          <div class="agent-output" id="reviewer-out">Waiting for input...</div>
         </div>
-        <div class="agent-card redteam">
+        <div class="agent-output" id="reviewer-out">Waiting for input...</div>
+      </div>
+      <div class="agent-card redteam">
+        <div class="agent-tag-row">
           <div class="agent-tag"><span class="dot"></span>RED TEAM AGENT</div>
-          <div class="agent-output" id="redteam-out">Waiting for input...</div>
         </div>
-        <div class="agent-card orchestrator">
+        <div class="agent-output" id="redteam-out">Waiting for input...</div>
+        <div class="code-block" id="redteam-code" style="display:none"></div>
+      </div>
+      <div class="agent-card orchestrator">
+        <div class="agent-tag-row">
           <div class="agent-tag"><span class="dot"></span>ORCHESTRATOR</div>
-          <div class="agent-output" id="orch-out">Waiting for input...</div>
         </div>
+        <div class="agent-output" id="orch-out">Waiting for input...</div>
       </div>
-
-      <div class="human-loop" id="human-loop">
-        <div class="human-loop-title">⚠ DISAGREEMENT DETECTED — HUMAN DECISION REQUIRED</div>
-        <div class="human-loop-sub">Agents could not reach consensus. Your call.</div>
-        <div class="decision-btns">
-          <button class="btn-approve" onclick="decide('APPROVED')">✓ Approve</button>
-          <button class="btn-reject" onclick="decide('REJECTED')">✗ Reject</button>
-          <button class="btn-changes" onclick="decide('CHANGES REQUESTED')">↩ Request Changes</button>
-        </div>
-      </div>
-
-      <div class="verdict" id="verdict"></div>
     </div>
 
-    <div class="chat-fab" id="chat-fab" onclick="toggleChat()">💬</div>
+    <div class="human-loop" id="human-loop">
+      <div class="human-loop-title">⚠ DISAGREEMENT DETECTED — HUMAN DECISION REQUIRED</div>
+      <div class="human-loop-sub">Agents could not reach consensus. Your call.</div>
+      <div class="decision-btns">
+        <button class="btn-approve" onclick="decide('APPROVED')">✓ Approve</button>
+        <button class="btn-reject" onclick="decide('REJECTED')">✗ Reject</button>
+        <button class="btn-changes" onclick="decide('CHANGES REQUESTED')">↩ Request Changes</button>
+      </div>
+    </div>
 
-    <div class="chat-popup" id="chat-popup">
-      <div class="chat-popup-header">
-        <span>Ask a follow-up question</span>
-        <span class="chat-close" onclick="toggleChat()">✕</span>
-      </div>
-      <div class="chat-messages" id="chat-messages"></div>
-      <div class="chat-input-row">
-        <input id="chat-input" type="text" placeholder="Run a review first..." disabled />
-        <button class="btn-chat" id="chat-send" onclick="sendChat()" disabled>Send</button>
-      </div>
+    <div class="verdict" id="verdict"></div>
+    <div class="download-row" id="download-row">
+      <button class="btn-download" onclick="downloadReview()">⬇ Download Review (.md)</button>
     </div>
   </div>
 
-  <script>
-  function goToApp(){
-    document.getElementById('landing-page').style.display='none';
-    document.getElementById('app-page').style.display='block';
+  <div class="chat-fab" id="chat-fab" onclick="toggleChat()">💬</div>
+
+  <div class="chat-popup" id="chat-popup">
+    <div class="chat-popup-header">
+      <span>Ask a follow-up question</span>
+      <span class="chat-close" onclick="toggleChat()">✕</span>
+    </div>
+    <div class="chat-messages" id="chat-messages"></div>
+    <div class="chat-input-row">
+      <input id="chat-input" type="text" placeholder="Run a review first..." disabled />
+      <button class="btn-chat" id="chat-send" onclick="sendChat()" disabled>Send</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function goToApp(){
+  document.getElementById('landing-page').style.display='none';
+  document.getElementById('app-page').style.display='block';
+  loadStats();
+}
+
+function goHome(){
+  document.getElementById('app-page').style.display='none';
+  document.getElementById('landing-page').style.display='block';
+}
+
+function toggleTheme(){
+  document.body.classList.toggle('light');
+  document.querySelectorAll('.theme-toggle').forEach(b=>{
+    b.textContent=document.body.classList.contains('light')?'☀️':'🌙';
+  });
+}
+
+let lastReviewData=null, lastRepo=null, lastPR=null, fullReviewContext='', lastDecision=null;
+
+function loadStats(){
+  const stats = JSON.parse(localStorage.getItem('prguardian_stats') || '{"reviewed":0,"disagreements":0}');
+  document.getElementById('stat-reviewed').textContent = stats.reviewed;
+  document.getElementById('stat-disagree').textContent = stats.disagreements;
+}
+
+function updateStats(disagreement){
+  const stats = JSON.parse(localStorage.getItem('prguardian_stats') || '{"reviewed":0,"disagreements":0}');
+  stats.reviewed += 1;
+  if(disagreement) stats.disagreements += 1;
+  localStorage.setItem('prguardian_stats', JSON.stringify(stats));
+  loadStats();
+}
+
+function extractScore(writerText){
+  const match = writerText.match(/(?:quality\s*score|score)[:\s]*(\d+)(?:\s*\/\s*10)?/i);
+  if(!match) return null;
+  return parseInt(match[1], 10);
+}
+
+function setScoreBadge(score){
+  const el = document.getElementById('score-badge');
+  if(score === null || isNaN(score)){
+    el.className = 'score-badge';
+    el.textContent = '';
+    return;
   }
+  el.textContent = score + '/10';
+  if(score >= 7) el.className = 'score-badge green';
+  else if(score >= 4) el.className = 'score-badge yellow';
+  else el.className = 'score-badge red';
+}
 
-  function toggleTheme(){
-    document.body.classList.toggle('light');
-    document.querySelectorAll('.theme-toggle').forEach(b=>{
-      b.textContent=document.body.classList.contains('light')?'☀️':'🌙';
-    });
-  }
+function highlightCode(codeText){
+  const escaped = codeText
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const riskWords = /\b(SELECT|INSERT|UPDATE|DELETE|DROP|TODO|FIXME|password|secret|api_key|eval|exec)\b/gi;
+  return escaped.replace(riskWords, m => `<span class="hl-risk">${m}</span>`);
+}
 
-  let lastReviewData=null, lastRepo=null, lastPR=null, fullReviewContext='';
+async function runReview(){
+  const repo=document.getElementById('repo').value.trim();
+  const pr=document.getElementById('pr').value.trim();
+  if(!repo||!pr){alert('Please enter both repo and PR number');return}
+  const btn=document.getElementById('btn');
+  btn.disabled=true;
+  btn.innerHTML='<span class="spinner"></span>Reviewing...';
+  ['writer-out','reviewer-out','redteam-out','orch-out'].forEach(id=>{
+  document.getElementById(id).classList.add('loading-pulse');
+});
+set('writer-out','Analyzing code quality...',false);
+set('reviewer-out','Waiting for Writer...',false);
+set('redteam-out','Preparing security probe...',false);
+set('orch-out','Pipeline starting...',false);
+  document.getElementById('redteam-code').style.display='none';
+  document.getElementById('verdict').style.display='none';
+  document.getElementById('download-row').style.display='none';
+  document.getElementById('human-loop').style.display='none';
+  setScoreBadge(null);
 
-  async function runReview(){
-    const repo=document.getElementById('repo').value.trim();
-    const pr=document.getElementById('pr').value.trim();
-    if(!repo||!pr){alert('Please enter both repo and PR number');return}
-    const btn=document.getElementById('btn');
-    btn.disabled=true;
-    btn.innerHTML='<span class="spinner"></span>Reviewing...';
-    set('writer-out','Analyzing code quality...',false);
-    set('reviewer-out','Waiting for Writer...',false);
-    set('redteam-out','Preparing security probe...',false);
-    set('orch-out','Pipeline starting...',false);
-    document.getElementById('verdict').style.display='none';
-    document.getElementById('human-loop').style.display='none';
+  try{
+    const res=await fetch('/review',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({repo,pr_number:pr})});
+    const d=await res.json();
+    lastReviewData=d; lastRepo=repo; lastPR=pr;
+    if(!d.success){
+  set('writer-out',"Couldn't find that PR — double check the repo name (owner/repo) and PR number.",false);
+      set('reviewer-out','Pipeline failed.',false);
+      set('redteam-out','Pipeline failed.',false);
+      set('orch-out','Pipeline failed.',false);
+    } else {
+      set('writer-out',d.writer,true);
+      setScoreBadge(extractScore(d.writer));
+      set('reviewer-out',d.reviewer,true);
+      set('redteam-out',d.red_team,true);
 
-    try{
-      const res=await fetch('/review',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({repo,pr_number:pr})});
-      const d=await res.json();
-      lastReviewData=d; lastRepo=repo; lastPR=pr;
-      if(!d.success){
-        set('writer-out','Error: '+d.error,false);
-        set('reviewer-out','Pipeline failed.',false);
-        set('redteam-out','Pipeline failed.',false);
-        set('orch-out','Pipeline failed.',false);
-      } else {
-        set('writer-out',d.writer,true);
-        set('reviewer-out',d.reviewer,true);
-        set('redteam-out',d.red_team,true);
-        fullReviewContext=`WRITER:\n${d.writer}\n\nREVIEWER:\n${d.reviewer}\n\nRED TEAM:\n${d.red_team}`;
-        enableChat();
-        if(d.disagreement){
-          set('orch-out','⚠ DISAGREEMENT DETECTED\nReviewer challenged the Writer.\nAwaiting your decision...',true);
-          document.getElementById('human-loop').style.display='block';
-        } else {
-          set('orch-out','✓ CONSENSUS REACHED\nAll agents agree. PR can be auto-processed.',true);
-          showVerdict('AUTO-APPROVED',false);
-        }
+      if(d.code){
+        const codeEl = document.getElementById('redteam-code');
+        codeEl.innerHTML = highlightCode(d.code.slice(0, 1200));
+        codeEl.style.display = 'block';
       }
-    } catch(e){set('writer-out','Network error: '+e.message,false)}
-    btn.disabled=false;
-    btn.innerHTML='Review PR';
-  }
 
-  async function decide(decision){
-    document.getElementById('human-loop').style.display='none';
-    showVerdict(decision,decision!=='APPROVED');
-    if(lastReviewData){
-      try{
-        const res=await fetch('/post-decision',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({repo:lastRepo,pr_number:lastPR,decision:decision,reviewer_findings:lastReviewData.reviewer,red_team_findings:lastReviewData.red_team})});
-        const d=await res.json();
-        if(d.success){
-          document.getElementById('verdict').innerHTML+='<br><span style="font-size:11px;color:#9db89f">✓ Comment posted to PR on GitHub</span>';
-        }
-      } catch(e){}
+      fullReviewContext=`WRITER:\n${d.writer}\n\nREVIEWER:\n${d.reviewer}\n\nRED TEAM:\n${d.red_team}`;
+      enableChat();
+      updateStats(d.disagreement);
+
+      if(d.disagreement){
+        set('orch-out','⚠ DISAGREEMENT DETECTED\nReviewer challenged the Writer.\nAwaiting your decision...',true);
+        document.getElementById('human-loop').style.display='block';
+      } else {
+        set('orch-out','✓ CONSENSUS REACHED\nAll agents agree. PR can be auto-processed.',true);
+        showVerdict('AUTO-APPROVED',false);
+      }
     }
-  }
+  } catch(e){set('writer-out','Network error: '+e.message,false)}
+  btn.disabled=false;
+  btn.innerHTML='Review PR';
+}
 
-  function showVerdict(text,isChanges){
-    const v=document.getElementById('verdict');
-    v.textContent=isChanges?'⚠ Final verdict: '+text:'✓ Final verdict: '+text;
-    v.className='verdict '+(isChanges?'changes':'approved');
-    v.style.display='block';
+async function decide(decision){
+  document.getElementById('human-loop').style.display='none';
+  lastDecision = decision;
+  showVerdict(decision,decision!=='APPROVED');
+  if(lastReviewData){
+    try{
+      const res=await fetch('/post-decision',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({repo:lastRepo,pr_number:lastPR,decision:decision,reviewer_findings:lastReviewData.reviewer,red_team_findings:lastReviewData.red_team})});
+      const d=await res.json();
+      if(d.success){
+        document.getElementById('verdict').innerHTML+='<br><span style="font-size:11px;color:#9db89f">✓ Comment posted to PR on GitHub</span>';
+      }
+    } catch(e){}
   }
+}
 
-  function parseMarkdown(text){
-    return text.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
-      .replace(/^#### (.+)$/gm,'<strong>$1</strong>')
-      .replace(/^### (.+)$/gm,'<br><strong>$1</strong>')
-      .replace(/^## (.+)$/gm,'<br><strong>$1</strong>')
-      .replace(/^# (.+)$/gm,'<br><strong>$1</strong>')
-      .replace(/^\* (.+)$/gm,'• $1')
-      .replace(/^\d+\. (.+)$/gm,'$1')
-      .replace(/\n/g,'<br>');
-  }
+function showVerdict(text,isChanges){
+  const v=document.getElementById('verdict');
+  v.textContent=isChanges?'⚠ Final verdict: '+text:'✓ Final verdict: '+text;
+  v.className='verdict '+(isChanges?'changes':'approved');
+  v.style.display='block';
+  document.getElementById('download-row').style.display='block';
+  if(!lastDecision) lastDecision = text;
+}
+
+function downloadReview(){
+  if(!lastReviewData) return;
+  const md = `# PR Guardian Review Report
+
+**Repository:** ${lastRepo}
+**PR Number:** #${lastPR}
+**Final Verdict:** ${lastDecision || lastReviewData.verdict}
+**Disagreement Detected:** ${lastReviewData.disagreement ? 'Yes' : 'No'}
+
+---
+
+## Writer Agent Review
+
+${lastReviewData.writer}
+
+---
+
+## Reviewer Agent Challenge
+
+${lastReviewData.reviewer}
+
+---
+
+## Red Team Security Probe
+
+${lastReviewData.red_team}
+
+---
+
+_Generated by PR Guardian — Multi-Agent Adversarial Code Review System_
+`;
+  const blob = new Blob([md], {type: 'text/markdown'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `pr-guardian-review-${lastRepo.replace('/','-')}-${lastPR}.md`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function parseMarkdown(text){
+  return text.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/^#### (.+)$/gm,'<strong>$1</strong>')
+    .replace(/^### (.+)$/gm,'<br><strong>$1</strong>')
+    .replace(/^## (.+)$/gm,'<br><strong>$1</strong>')
+    .replace(/^# (.+)$/gm,'<br><strong>$1</strong>')
+    .replace(/^\* (.+)$/gm,'• $1')
+    .replace(/^\d+\. (.+)$/gm,'$1')
+    .replace(/\n/g,'<br>');
+}
+
 
   function set(id,text,active){
-    const el=document.getElementById(id);
-    el.innerHTML=active?parseMarkdown(text):text;
-    el.className='agent-output'+(active?' active':'');
-  }
+  const el=document.getElementById(id);
+  el.innerHTML=active?parseMarkdown(text):text;
+  el.className='agent-output'+(active?' active':'');
+  if(active) el.classList.remove('loading-pulse');
+}
 
-  function enableChat(){
-    const input = document.getElementById('chat-input');
-    const sendBtn = document.getElementById('chat-send');
-    input.disabled = false;
-    sendBtn.disabled = false;
-    input.placeholder = 'Ask about the review...';
-    document.getElementById('chat-popup').classList.add('open');
-    
-    input.addEventListener('keydown', function(e){
-      if(e.key === 'Enter' && !e.shiftKey){
-        e.preventDefault();
-        sendChat();
-      }
-    });
-  }
 
-  function toggleChat(){
-    document.getElementById('chat-popup').classList.toggle('open');
-  }
-  function goHome(){
-    document.getElementById('app-page').style.display='none';
-    document.getElementById('landing-page').style.display='block';
-  }
-  async function sendChat(){
-    const input=document.getElementById('chat-input');
-    const question=input.value.trim();
-    if(!question) return;
-    const messages=document.getElementById('chat-messages');
-    messages.innerHTML+=`<div class="chat-msg user">${question}</div>`;
-    input.value='';
-    messages.scrollTop=messages.scrollHeight;
-    const sendBtn=document.getElementById('chat-send');
-    sendBtn.disabled=true;
-    sendBtn.textContent='...';
-    try{
-      const res=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:question,context:fullReviewContext})});
-      const d=await res.json();
-      const answer=d.success?d.answer:'Sorry, something went wrong.';
-      messages.innerHTML+=`<div class="chat-msg assistant">${parseMarkdown(answer)}</div>`;
-    } catch(e){
-      messages.innerHTML+=`<div class="chat-msg assistant">Network error.</div>`;
+function enableChat(){
+  const input = document.getElementById('chat-input');
+  const sendBtn = document.getElementById('chat-send');
+  input.disabled = false;
+  sendBtn.disabled = false;
+  input.placeholder = 'Ask about the review...';
+  document.getElementById('chat-popup').classList.add('open');
+  input.addEventListener('keydown', function(e){
+    if(e.key === 'Enter' && !e.shiftKey){
+      e.preventDefault();
+      sendChat();
     }
-    messages.scrollTop=messages.scrollHeight;
-    sendBtn.disabled=false;
-    sendBtn.textContent='Send';
+  });
+}
+
+function toggleChat(){
+  document.getElementById('chat-popup').classList.toggle('open');
+}
+
+async function sendChat(){
+  const input=document.getElementById('chat-input');
+  const question=input.value.trim();
+  if(!question) return;
+  const messages=document.getElementById('chat-messages');
+  messages.innerHTML+=`<div class="chat-msg user">${question}</div>`;
+  input.value='';
+  messages.scrollTop=messages.scrollHeight;
+  const sendBtn=document.getElementById('chat-send');
+  sendBtn.disabled=true;
+  sendBtn.textContent='...';
+  try{
+    const res=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:question,context:fullReviewContext})});
+    const d=await res.json();
+    const answer=d.success?d.answer:'Sorry, something went wrong.';
+    messages.innerHTML+=`<div class="chat-msg assistant">${parseMarkdown(answer)}</div>`;
+  } catch(e){
+    messages.innerHTML+=`<div class="chat-msg assistant">Network error.</div>`;
   }
-  </script>
-  </body>
-  </html>
+  messages.scrollTop=messages.scrollHeight;
+  sendBtn.disabled=false;
+  sendBtn.textContent='Send';
+}
+</script>
+</body>
+</html>
